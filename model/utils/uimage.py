@@ -264,7 +264,7 @@ def resize(image, output_size=None, f=None):
             return cv2.resize(image, output_size)
         else:
             return cv2.resize(image, output_size, fx=f, fy=f)
-    except cv2.Error:
+    except cv2.error:
         return image
 
 def crop_rectangle(image, initial_coordinates, final_coordinates, channels_last=True):

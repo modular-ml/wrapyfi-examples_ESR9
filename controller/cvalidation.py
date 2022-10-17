@@ -42,10 +42,10 @@ def validate_image_video_mode_arguments(args):
     if args.gradcam and (not args.display):
         raise RuntimeError("Error: 'gradcam' requires 'display' equals True.")
 
-    # If 'display' is False, 'output' is mandatory
-    if (not args.display) and is_none(args.output):
-        raise RuntimeError("Error: 'output' is not valid. The argument 'output' is a mandatory "
-                           "field when display is False.")
+    # If 'display' is False, 'output' is mandatory. Not needed anymore since there is a possibility for headless mode.
+    # if (not args.display) and is_none(args.output):
+    #     raise RuntimeError("Error: 'output' is not valid. The argument 'output' is a mandatory "
+    #                        "field when display is False.")
 
 
 def validate_webcam_mode_arguments(args):
@@ -59,7 +59,7 @@ def validate_webcam_mode_arguments(args):
     if args.gradcam and (not args.display):
         raise RuntimeError("Error: 'gradcam' requires 'display' equals True.")
 
-    # If 'display' is False, 'output' is mandatory
-    if (not args.display) and is_none(args.output):
-        raise RuntimeError("Error: 'output' is not valid. The argument 'output' is a mandatory "
-                           "field when display is False.")
+    # If 'display' is False, 'output' is mandatory. Not needed anymore since there is a possibility for headless mode.
+    # if (not args.display) and is_none(args.output):
+    #     raise RuntimeError("Error: 'output' is not valid. The argument 'output' is a mandatory "
+    #                        "field when display is False.")
