@@ -29,7 +29,7 @@ import torch.nn as nn
 import torch
 
 from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
-from wrapyfi.config.manager import ConfigManager
+# from wrapyfi.config.manager import ConfigManager
 
 
 class Base(nn.Module):

@@ -25,6 +25,7 @@ from argparse import RawTextHelpFormatter
 import time
 
 # Modules
+from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
 from wrapyfi.config.manager import ConfigManager
 from controller import cvalidation, cvision
 from model.utils import ufile
@@ -43,7 +44,9 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, fr
     write_to_file = not (output_csv_file is None)
     starting_time = time.time()
 
-    if not cvvideo.initialize_video_capture(camera_id)[0]:
+    # if not cvvideo.initialize_video_capture(camera_id)[0]:
+    if not cvvideo.initialize_video_capture(camera_id,
+                                            video_device="CVVideoCapture" if isinstance(camera_id, int) else "MwareVideoCapture")[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether a webcam is working or not." +
                            "In linux, you can use Cheese for testing.")
@@ -184,6 +187,13 @@ def video(input_video_path, display, gradcam, output_csv_file, screen_size,
             ufile.close_file()
 
 
+def str_or_int(arg):
+    try:
+        return int(arg)  # try convert to int
+    except ValueError:
+        return arg
+
+
 def main():
     # Parser
     parser = argparse.ArgumentParser(description='test', formatter_class=RawTextHelpFormatter)
@@ -208,8 +218,10 @@ def main():
                         action="store_true")
     parser.add_argument("-w", "--webcam_id",
                         help="define the webcam by 'id' to capture images in the webcam mode." +
-                             "If none is selected, the default camera by the OS is used.",
-                        type=int, default=-1)
+                             "If none is selected, the default camera by the OS is used. "
+                             "If webcam with ESR_WEBCAM_MWARE env variable is chosen, "
+                             "this equates to the port (topic) name. e.g., /icub/cam/left",
+                        type=str_or_int, default="-1")
     parser.add_argument("-f", "--frames", help="define frames of videos and webcam captures.",
                         type=int, default=5)
     parser.add_argument("-b", "--branch", help="show individual branch's classification if set true, otherwise," +

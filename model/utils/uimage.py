@@ -12,6 +12,7 @@ __version__ = "1.0"
 
 # Standard Libraries
 import os
+import time
 
 # External Libraries
 import cv2
@@ -28,12 +29,12 @@ class VideoCapture(cv2.VideoCapture):
         super().__init__(*args, **kwargs)
 
         
-class ICubVideoCapture(MiddlewareCommunicator):
-    """
-    ICub camera capturer. Image server on the real robot or ICub_SIM must be running
-    """
+class MwareVideoCapture(MiddlewareCommunicator):
     CAP_PROP_FRAME_WIDTH = 320
     CAP_PROP_FRAME_HEIGHT = 240
+    """
+    ICub camera capturer. Image server on the real robot or ICub_SIM must be running. This can be used by other robots
+    """
     
     def __init__(self, camera="/icub/cam/left", fps=30, *args, **kwargs):
         super(MiddlewareCommunicator, self).__init__()
@@ -47,22 +48,23 @@ class ICubVideoCapture(MiddlewareCommunicator):
             cv2.CAP_PROP_FRAME_HEIGHT: "height"
         }
 
-        self.cam_props = {"port_cam": camera, 
+        self.cam_props = {"port_cam": camera,
                           "fpos": 0, 
                           "fps": fps,
                           "msec": 1/fps,
                           "fpos_msec": 0,
                           "fcount": 0, 
-                          "width": CAP_PROP_FRAME_WIDTH, 
-                          "height": CAP_PROP_FRAME_HEIGHT}
+                          "width": self.CAP_PROP_FRAME_WIDTH,
+                          "height": self.CAP_PROP_FRAME_HEIGHT}
 
         # control the listening properties from within the app
         self.activate_communication("receive_images", "listen")
 
         self.opened = True
 
-    @MiddlewareCommunicator.register("Image", "yarp", "ICubVideoCapture", "$port_cam", 
-                                     carrier="", width=CAP_PROP_FRAME_WIDTH, height=CAP_PROP_FRAME_HEIGHT, rgb=False)
+    @MiddlewareCommunicator.register("Image", os.environ.get("ESR_WEBCAM_MWARE", DEFAULT_COMMUNICATOR),
+                                     "MwareVideoCapture", "$port_cam",
+                                     carrier="", width=CAP_PROP_FRAME_WIDTH, height=CAP_PROP_FRAME_HEIGHT, rgb=True)
     def receive_images(self, port_cam):
         return None,
 
@@ -82,7 +84,7 @@ class ICubVideoCapture(MiddlewareCommunicator):
             return False, None
     
     def grab(self):
-        raise NotImplementedError("GrabFrame not implemented for iCub")
+        return self.retrieve()[0]
     
     def read(self):
         return self.retrieve()
@@ -123,7 +125,8 @@ class CVVideo(MiddlewareCommunicator):
             return self.cap.isOpened(),
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "CVVideo", "/esr9/cam_ini", should_wait=True)
-    def initialize_video_capture(self, source, video_device="VideoCapture", img_width=CAP_PROP_FRAME_WIDTH, img_height=CAP_PROP_FRAME_HEIGHT):
+    def initialize_video_capture(self, source, video_device="VideoCapture",
+                                 img_width=CAP_PROP_FRAME_WIDTH, img_height=CAP_PROP_FRAME_HEIGHT):
 
         # If cap is not none, it re-initialize video capture with the new video file
         if not (self.cap is None):

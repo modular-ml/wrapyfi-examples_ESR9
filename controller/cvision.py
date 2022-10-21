@@ -10,6 +10,8 @@ __email__ = "siqueira.hc@outlook.com"
 __license__ = "MIT license"
 __version__ = "1.0"
 
+import os
+
 # External Libraries
 import numpy as np
 import torch
@@ -23,6 +25,8 @@ from model.ml import fer
 from model.utils import udata, uimage
 from model.ml import esr_9
 from model.ml import grad_cam
+
+from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
 
 
 # Haar cascade parameters
@@ -48,6 +52,31 @@ _ESR_9 = None
 
 # Saliency map generation: Grad-CAM
 _GRAD_CAM = None
+
+# Broadcast ensemble prediction to middleware topics specified
+_EMOTION_BROADCASTER = None
+
+
+class EmotionBroadcaster(MiddlewareCommunicator):
+    """
+    Broadcast emotion data using middleware of choice
+    """
+    def __init__(self):
+        super(EmotionBroadcaster, self).__init__()
+        self.broadcast_topic = None
+
+    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
+                                     "EmotionBroadcaster",  "/emotion_interface/emotion_category", should_wait=False)
+    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
+                                     "EmotionBroadcaster", "/emotion_interface/emotion_continuous", should_wait=False)
+    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
+                                     "EmotionBroadcaster",  "/emotion_interface/emotion_index", should_wait=False)
+    def broadcast(self, emotion_category, emotion_continuous, emotion_index):
+        if self.broadcast_topic is None and os.environ.get("ESR_BROADCAST_MWARE", ""):
+            self.broadcast_topic = True
+            self.activate_communication("broadcast", "publish")
+        return emotion_category, emotion_continuous, emotion_index
+
 
 # Public methods >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -99,6 +128,10 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
     :param image: (ndarray) input image.
     :return: An FER object with the components necessary for display.
     """
+    global _EMOTION_BROADCASTER
+
+    if _EMOTION_BROADCASTER is None:
+        _EMOTION_BROADCASTER = EmotionBroadcaster()
 
     to_return_fer = None
     saliency_maps = []
@@ -109,7 +142,8 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
     if face_coordinates is None:
         to_return_fer = fer.FER(image)
     else:
-        face = image[face_coordinates[0][1]:face_coordinates[1][1], face_coordinates[0][0]:face_coordinates[1][0], :]
+        face = image[max(0, face_coordinates[0][1]): min(face_coordinates[1][1], image.shape[0]),
+               max(0, face_coordinates[0][0]): min(face_coordinates[1][0], image.shape[1]), :]
 
         # Get device
         device = torch.device("cuda" if on_gpu else "cpu")
@@ -120,7 +154,7 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
 
         # Recognize facial expression
         # emotion_idx is needed to run Grad-CAM
-        emotion, affect, emotion_idx = _predict(input_face, device)
+        emotion, affect, emotion_idx = _EMOTION_BROADCASTER.broadcast(*_predict(input_face, device))
 
         # Grad-CAM
         if grad_cam:
@@ -263,6 +297,7 @@ def _predict(input_face, device):
     to_return_emotion.append(udata.AffectNetCategorical.get_class(np.argmax(emotion_votes)))
 
     return to_return_emotion, to_return_affect, to_return_emotion_idx
+
 
 
 def _generate_saliency_maps(input_face, emotion_outputs, device):
