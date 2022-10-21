@@ -63,18 +63,16 @@ class EmotionBroadcaster(MiddlewareCommunicator):
     """
     def __init__(self):
         super(EmotionBroadcaster, self).__init__()
-        self.broadcast_topic = None
+        if  os.environ.get("ESR_BROADCAST_MWARE", ""):
+            self.activate_communication("broadcast", "publish")
 
     @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
-                                     "EmotionBroadcaster",  "/emotion_interface/emotion_category", should_wait=False)
+                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/emotion_category", should_wait=False)
     @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
                                      "EmotionBroadcaster", "/emotion_interface/emotion_continuous", should_wait=False)
     @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
                                      "EmotionBroadcaster",  "/emotion_interface/emotion_index", should_wait=False)
     def broadcast(self, emotion_category, emotion_continuous, emotion_index):
-        if self.broadcast_topic is None and os.environ.get("ESR_BROADCAST_MWARE", ""):
-            self.broadcast_topic = True
-            self.activate_communication("broadcast", "publish")
         return emotion_category, emotion_continuous, emotion_index
 
 
