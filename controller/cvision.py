@@ -11,6 +11,7 @@ __license__ = "MIT license"
 __version__ = "1.0"
 
 import os
+import time
 
 # External Libraries
 import numpy as np
@@ -67,13 +68,16 @@ class EmotionBroadcaster(MiddlewareCommunicator):
             self.activate_communication("broadcast", "publish")
 
     @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
-                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/emotion_category", should_wait=False)
-    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
-                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/emotion_continuous", should_wait=False)
-    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
-                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/emotion_index", should_wait=False)
+                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/facial_expressions", should_wait=False)
     def broadcast(self, emotion_category, emotion_continuous, emotion_index):
-        return emotion_category, emotion_continuous, emotion_index
+        if emotion_category is not None:
+            return {"topic": "facial_expressions", 
+                    "emotion_category": emotion_category, 
+                    "emotion_continuous": emotion_continuous, 
+                    "emotion_index": emotion_index, 
+                    "timestamp": time.time()},
+        else:
+            return None, 
 
 
 # Public methods >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -152,7 +156,7 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
 
         # Recognize facial expression
         # emotion_idx is needed to run Grad-CAM
-        emotion, affect, emotion_idx = _EMOTION_BROADCASTER.broadcast(*_predict(input_face, device))
+        emotion, affect, emotion_idx = _EMOTION_BROADCASTER.broadcast_prediction(*_predict(input_face, device))
 
         # Grad-CAM
         if grad_cam:
