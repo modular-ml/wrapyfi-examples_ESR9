@@ -58,7 +58,8 @@ class MwareVideoCapture(MiddlewareCommunicator):
                           "height": self.CAP_PROP_FRAME_HEIGHT}
 
         # control the listening properties from within the app
-        self.activate_communication("receive_images", "listen")
+        if os.environ.get("ESR_WEBCAM_MWARE", ""):
+            self.activate_communication("receive_images", "listen")
 
         self.opened = True
 
