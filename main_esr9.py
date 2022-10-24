@@ -46,7 +46,7 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, fr
 
     # if not cvvideo.initialize_video_capture(camera_id)[0]:
     if not cvvideo.initialize_video_capture(camera_id,
-                                            video_device="CVVideoCapture" if isinstance(camera_id, int) else "MwareVideoCapture")[0]:
+                                            video_device="VideoCapture" if isinstance(camera_id, int) else "MwareVideoCapture")[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether a webcam is working or not." +
                            "In linux, you can use Cheese for testing.")

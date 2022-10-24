@@ -65,11 +65,11 @@ class EmotionBroadcaster(MiddlewareCommunicator):
     def __init__(self):
         super(EmotionBroadcaster, self).__init__()
         if  os.environ.get("ESR_BROADCAST_MWARE", ""):
-            self.activate_communication("broadcast", "publish")
+            self.activate_communication("broadcast_prediction", "publish")
 
     @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
                                      "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/facial_expressions", should_wait=False)
-    def broadcast(self, emotion_category, emotion_continuous, emotion_index):
+    def broadcast_prediction(self, emotion_category, emotion_continuous, emotion_index):
         if emotion_category is not None:
             return {"topic": "facial_expressions", 
                     "emotion_category": emotion_category, 
@@ -156,8 +156,10 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
 
         # Recognize facial expression
         # emotion_idx is needed to run Grad-CAM
-        emotion, affect, emotion_idx = _EMOTION_BROADCASTER.broadcast_prediction(*_predict(input_face, device))
-
+        prediction, = _EMOTION_BROADCASTER.broadcast_prediction(*(_predict(input_face, device)))
+        emotion = prediction["emotion_category"]
+        affect = prediction["emotion_continuous"]
+        emotion_idx = prediction["emotion_index"]
         # Grad-CAM
         if grad_cam:
             saliency_maps = _generate_saliency_maps(input_face, emotion_idx, device)
