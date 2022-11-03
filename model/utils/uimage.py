@@ -20,87 +20,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
-
+from wrapyfi_interfaces.io.video.interface import VideoCapture, VideoCaptureReceiver
 
 # Image I/O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-class VideoCapture(cv2.VideoCapture):
-    def __init__(self, *args, fps=None, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        
-class MwareVideoCapture(MiddlewareCommunicator):
-    CAP_PROP_FRAME_WIDTH = 320
-    CAP_PROP_FRAME_HEIGHT = 240
-    """
-    ICub camera capturer. Image server on the real robot or ICub_SIM must be running. This can be used by other robots
-    """
-    
-    def __init__(self, camera="/icub/cam/left", fps=30, *args, **kwargs):
-        super(MiddlewareCommunicator, self).__init__()
-
-        self.properties = {
-            cv2.CAP_PROP_POS_FRAMES: "fpos",
-            cv2.CAP_PROP_POS_MSEC: "fpos_msec",
-            cv2.CAP_PROP_FPS: "fps",
-            cv2.CAP_PROP_FRAME_COUNT: "fcount",
-            cv2.CAP_PROP_FRAME_WIDTH: "width",
-            cv2.CAP_PROP_FRAME_HEIGHT: "height"
-        }
-
-        self.cam_props = {"port_cam": camera,
-                          "fpos": 0, 
-                          "fps": fps,
-                          "msec": 1/fps,
-                          "fpos_msec": 0,
-                          "fcount": 0, 
-                          "width": self.CAP_PROP_FRAME_WIDTH,
-                          "height": self.CAP_PROP_FRAME_HEIGHT}
-
-        # control the listening properties from within the app
-        if os.environ.get("ESR_WEBCAM_MWARE", ""):
-            self.activate_communication("receive_images", "listen")
-
-        self.opened = True
-
-    @MiddlewareCommunicator.register("Image", os.environ.get("ESR_WEBCAM_MWARE", DEFAULT_COMMUNICATOR),
-                                     "MwareVideoCapture", "$port_cam",
-                                     carrier="", width=CAP_PROP_FRAME_WIDTH, height=CAP_PROP_FRAME_HEIGHT, rgb=True)
-    def receive_images(self, port_cam):
-        return None,
-
-    def retrieve(self):
-        try:
-            # realtime capture with no fps interface, so we need to wait according to fps ignoring extra processing time
-            time.sleep(self.cam_props["msec"] - 0.033)  # Default iCub camera sampling is 30 FPS -> 1/30 = 0.033
-
-            frame_index = self.cam_props["fpos"]
-            im, = self.receive_images(**self.cam_props)
-            self.opened = True
-            self.cam_props["fpos"] = frame_index+1
-            self.cam_props["fpos_msec"] = self.cam_props["fpos_msec"] + (frame_index + 1) * self.cam_props["msec"]
-            return True, im
-        except:
-            self.opened = False
-            return False, None
-    
-    def grab(self):
-        return self.retrieve()[0]
-    
-    def read(self):
-        return self.retrieve()
-
-    def isOpened(self):
-            return self.opened
-
-    def release(self):
-        pass
-
-    def set(self, propId, value):
-        self.cam_props[self.properties[propId]] = value
-
-    def get(self, propId):
-        return self.cam_props[self.properties[propId]]
 
 
 class CVVideo(MiddlewareCommunicator):
@@ -126,7 +48,7 @@ class CVVideo(MiddlewareCommunicator):
             return self.cap.isOpened(),
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "CVVideo", "/esr9/cam_ini", should_wait=True)
-    def initialize_video_capture(self, source, video_device="VideoCapture",
+    def initialize_video_capture(self, source, video_device="VideoCapture", video_mware=DEFAULT_COMMUNICATOR,
                                  img_width=CAP_PROP_FRAME_WIDTH, img_height=CAP_PROP_FRAME_HEIGHT):
 
         # If cap is not none, it re-initialize video capture with the new video file
@@ -136,7 +58,8 @@ class CVVideo(MiddlewareCommunicator):
 
         # Read the file
         try:
-            self.cap = globals()[video_device](source)
+            self.cap = globals()[video_device](str(source), headless=True, img_width=img_width, img_height=img_height,
+                                               mware=video_mware, multithreading=False)
             if img_width > 0 and img_height > 0:
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, img_width)
                 self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, img_height)

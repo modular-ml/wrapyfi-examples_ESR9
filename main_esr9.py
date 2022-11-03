@@ -33,7 +33,9 @@ from model.utils import uimage
 from model.screen.fer_demo import FERDemo
 
 
-def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, frames, branch, no_plot, face_detection):
+def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, frames, branch, no_plot, face_detection,
+           facial_expressions_port="/control_interface/facial_expressions",
+           facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR):
     """
     Receives images from a camera and recognizes
     facial expressions of the closets face in a frame-based approach.
@@ -46,7 +48,8 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, fr
 
     # if not cvvideo.initialize_video_capture(camera_id)[0]:
     if not cvvideo.initialize_video_capture(camera_id,
-                                            video_device="VideoCapture" if isinstance(camera_id, int) else "MwareVideoCapture")[0]:
+                                            video_device="VideoCapture" if isinstance(camera_id, int) else "VideoCaptureReceiver",
+                                            video_mware=video_mware)[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether a webcam is working or not." +
                            "In linux, you can use Cheese for testing.")
@@ -70,7 +73,9 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, fr
             # Get a frame
             img, _ = cvvideo.get_frame()
 
-            fer = None if (img is None) else cvision.recognize_facial_expression(img, device, face_detection, gradcam)
+            fer = None if (img is None) else cvision.recognize_facial_expression(img, device, face_detection, gradcam,
+                                                                                 facial_expressions_port=facial_expressions_port,
+                                                                                 facial_expressions_mware=facial_expressions_mware)
 
             # Display blank screen if no face is detected, otherwise,
             # display detected faces and perceived facial expression labels
@@ -219,9 +224,14 @@ def main():
     parser.add_argument("-w", "--webcam_id",
                         help="define the webcam by 'id' to capture images in the webcam mode." +
                              "If none is selected, the default camera by the OS is used. "
-                             "If webcam with ESR_WEBCAM_MWARE env variable is chosen, "
-                             "this equates to the port (topic) name. e.g., /icub/cam/left",
+                             "If webcam is a string, this equates to the port (topic) name. e.g., /icub/cam/left",
                         type=str_or_int, default="-1")
+    parser.add_argument("--video_mware", type=str, choices=MiddlewareCommunicator.get_communicators(),
+                        help="Middleware for listening to video stream")
+    parser.add_argument("--facial_expressions_port", type=str, default="",
+                        help="Port (topic) to publish facial expressions")
+    parser.add_argument("--facial_expressions_mware", type=str, choices=MiddlewareCommunicator.get_communicators(),
+                        help="Middleware to publish facial expressions")
     parser.add_argument("-f", "--frames", help="define frames of videos and webcam captures.",
                         type=int, default=5)
     parser.add_argument("-b", "--branch", help="show individual branch's classification if set true, otherwise," +

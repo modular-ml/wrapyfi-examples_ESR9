@@ -20,14 +20,13 @@ from torchvision import transforms
 from PIL import Image
 import cv2
 import dlib
+from wrapyfi_interfaces.templates.facial_expressions import FacialExpressionsInterface
 
 # Modules
 from model.ml import fer
 from model.utils import udata, uimage
 from model.ml import esr_9
 from model.ml import grad_cam
-
-from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
 
 
 # Haar cascade parameters
@@ -55,29 +54,8 @@ _ESR_9 = None
 _GRAD_CAM = None
 
 # Broadcast ensemble prediction to middleware topics specified
-_EMOTION_BROADCASTER = None
+_FACIAL_EXPRESSION_BROADCASTER = None
 
-
-class EmotionBroadcaster(MiddlewareCommunicator):
-    """
-    Broadcast emotion data using middleware of choice
-    """
-    def __init__(self):
-        super(EmotionBroadcaster, self).__init__()
-        if  os.environ.get("ESR_BROADCAST_MWARE", ""):
-            self.activate_communication("transmit_prediction", "publish")
-
-    @MiddlewareCommunicator.register("NativeObject", os.environ.get("ESR_BROADCAST_MWARE", DEFAULT_COMMUNICATOR),
-                                     "EmotionBroadcaster", os.environ.get("ESR_BROADCAST_TOPIC_PREFIX", "/emotion_interface") + "/facial_expressions", should_wait=False)
-    def transmit_prediction(self, emotion_category, emotion_continuous, emotion_index):
-        if emotion_category is not None:
-            return {"topic": "facial_expressions", 
-                    "emotion_category": emotion_category, 
-                    "emotion_continuous": emotion_continuous, 
-                    "emotion_index": emotion_index, 
-                    "timestamp": time.time()},
-        else:
-            return None, 
 
 
 # Public methods >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -118,7 +96,9 @@ def detect_face(image, face_detection_method=_ID_FACE_DETECTOR_DLIB):
     return face_coordinates[0] if (len(face_coordinates) > 0 and (np.sum(face_coordinates[0]) > 0)) else None
 
 
-def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
+def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam,
+                                facial_expressions_port="/control_interface/facial_expressions",
+                                facial_expressions_mware=""):
     """
     Detects a face in the input image.
     If more than one face is detected, the biggest one is used.
@@ -130,10 +110,12 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
     :param image: (ndarray) input image.
     :return: An FER object with the components necessary for display.
     """
-    global _EMOTION_BROADCASTER
+    global _FACIAL_EXPRESSION_BROADCASTER
 
-    if _EMOTION_BROADCASTER is None:
-        _EMOTION_BROADCASTER = EmotionBroadcaster()
+    if _FACIAL_EXPRESSION_BROADCASTER is None:
+        _FACIAL_EXPRESSION_BROADCASTER = FacialExpressionsInterface(
+            facial_expressions_port_out=facial_expressions_port, mware_out=facial_expressions_mware,
+            facial_expressions_port_in="")
 
     to_return_fer = None
     saliency_maps = []
@@ -156,7 +138,7 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam):
 
         # Recognize facial expression
         # emotion_idx is needed to run Grad-CAM
-        prediction, = _EMOTION_BROADCASTER.transmit_prediction(*(_predict(input_face, device)))
+        prediction, = _FACIAL_EXPRESSION_BROADCASTER.transmit_emotion(*(_predict(input_face, device)))
         emotion = prediction["emotion_category"]
         affect = prediction["emotion_continuous"]
         emotion_idx = prediction["emotion_index"]
