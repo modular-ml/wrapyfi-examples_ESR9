@@ -29,7 +29,7 @@ class CVVideo(MiddlewareCommunicator):
     CAP_PROP_FRAME_WIDTH = 320
     CAP_PROP_FRAME_HEIGHT = 240
 
-    def __init__(self, fps=30, max_fps=40, cap=None):
+    def __init__(self, fps=1, max_fps=40, cap=None):
         super().__init__()
         self.max_fps = max_fps
         self.fps = fps
@@ -59,7 +59,7 @@ class CVVideo(MiddlewareCommunicator):
         # Read the file
         try:
             self.cap = globals()[video_device](str(source), headless=True, img_width=img_width, img_height=img_height,
-                                               mware=video_mware, multithreading=False)
+                                               mware=video_mware, multithreading=False, fps=self.max_fps)
             if img_width > 0 and img_height > 0:
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, img_width)
                 self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, img_height)
