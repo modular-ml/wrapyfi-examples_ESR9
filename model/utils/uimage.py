@@ -26,10 +26,10 @@ from wrapyfi_interfaces.io.video.interface import VideoCapture, VideoCaptureRece
 
 
 class CVVideo(MiddlewareCommunicator):
-    CAP_PROP_FRAME_WIDTH = 320
-    CAP_PROP_FRAME_HEIGHT = 240
+    CAP_PROP_FRAME_WIDTH = 640
+    CAP_PROP_FRAME_HEIGHT = 480
 
-    def __init__(self, fps=1, max_fps=40, cap=None):
+    def __init__(self, fps=5, max_fps=30, cap=None):
         super().__init__()
         self.max_fps = max_fps
         self.fps = fps
@@ -104,6 +104,7 @@ class CVVideo(MiddlewareCommunicator):
                     # Skip frames
                     for i in range(int(self.max_fps / self.fps)):
                         self.cap.grab()
+                        time.sleep(self.fps/(self.max_fps*4))
 
                     is_valid_frame, to_return_frame = self.cap.retrieve()
 

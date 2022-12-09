@@ -138,7 +138,9 @@ def recognize_facial_expression(image, on_gpu, face_detection_method, grad_cam,
 
         # Recognize facial expression
         # emotion_idx is needed to run Grad-CAM
-        prediction, = _FACIAL_EXPRESSION_BROADCASTER.transmit_emotion(*(_predict(input_face, device)))
+        prediction, = _FACIAL_EXPRESSION_BROADCASTER.transmit_emotion(*(_predict(input_face, device)),
+                                                                      facial_expressions_port=facial_expressions_port,
+                                                                      _mware=facial_expressions_mware)
         emotion = prediction["emotion_category"]
         affect = prediction["emotion_continuous"]
         emotion_idx = prediction["emotion_index"]

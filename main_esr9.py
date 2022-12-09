@@ -23,6 +23,7 @@ __version__ = "1.0"
 import argparse
 from argparse import RawTextHelpFormatter
 import time
+import os
 
 # Modules
 from wrapyfi.connect.wrapper import MiddlewareCommunicator, DEFAULT_COMMUNICATOR
@@ -33,23 +34,25 @@ from model.utils import uimage
 from model.screen.fer_demo import FERDemo
 
 
-def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, frames, branch, no_plot, face_detection,
+def webcam(camera_id, display, gradcam, output_csv_file, screen_size, img_width, img_height, device, frames, max_frames,
+           branch, no_plot, face_detection,
            facial_expressions_port="/control_interface/facial_expressions",
-           facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR):
+           facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR, **kwargs):
     """
     Receives images from a camera and recognizes
     facial expressions of the closets face in a frame-based approach.
     """
 
-    cvvideo = uimage.CVVideo()
+    cvvideo = uimage.CVVideo(fps=frames, max_fps=max_frames)
     fer_demo = None
     write_to_file = not (output_csv_file is None)
     starting_time = time.time()
 
     # if not cvvideo.initialize_video_capture(camera_id)[0]:
     if not cvvideo.initialize_video_capture(camera_id,
-                                            video_device="VideoCapture" if isinstance(camera_id, int) else "VideoCaptureReceiver",
-                                            video_mware=video_mware)[0]:
+                                            video_device="VideoCapture" if isinstance(camera_id, int) or
+                                                                           os.path.exists(camera_id) else "VideoCaptureReceiver",
+                                            video_mware=video_mware, img_height=img_height, img_width=img_width)[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether a webcam is working or not." +
                            "In linux, you can use Cheese for testing.")
@@ -101,7 +104,9 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, device, fr
             ufile.close_file()
 
 
-def image(input_image_path, display, gradcam, output_csv_file, screen_size, device, branch, face_detection):
+def image(input_image_path, display, gradcam, output_csv_file, screen_size, device, branch, face_detection,
+          facial_expressions_port="/control_interface/facial_expressions",
+          facial_expressions_mware=DEFAULT_COMMUNICATOR, **kwargs):
     """
     Receives the full path to a image file and recognizes
     facial expressions of the closets face in a frame-based approach.
@@ -111,7 +116,9 @@ def image(input_image_path, display, gradcam, output_csv_file, screen_size, devi
     img = uimage.read(input_image_path)
 
     # Call FER method
-    fer = cvision.recognize_facial_expression(img, device, face_detection, gradcam)
+    fer = cvision.recognize_facial_expression(img, device, face_detection, gradcam,
+                                              facial_expressions_port=facial_expressions_port,
+                                              facial_expressions_mware=facial_expressions_mware)
 
     if write_to_file:
         ufile.create_file(output_csv_file, input_image_path)
@@ -128,18 +135,22 @@ def image(input_image_path, display, gradcam, output_csv_file, screen_size, devi
         fer_demo.quit()
 
 
-def video(input_video_path, display, gradcam, output_csv_file, screen_size,
-          device, frames, branch, no_plot, face_detection):
+def video(input_video_path, display, gradcam, output_csv_file, screen_size, img_width, img_height,
+          device, frames, max_frames, branch, no_plot, face_detection,
+          facial_expressions_port="/control_interface/facial_expressions",
+          facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR, **kwargs):
     """
     Receives the full path to a video file and recognizes
     facial expressions of the closets face in a frame-based approach.
     """
 
-    cvvideo = uimage.CVVideo()
+    cvvideo = uimage.CVVideo(fps=frames, max_fps=max_frames)
     fer_demo = None
     write_to_file = not (output_csv_file is None)
 
-    if not cvvideo.initialize_video_capture(input_video_path)[0]:
+    if not cvvideo.initialize_video_capture(input_video_path,
+                                            video_device="VideoCapture" if os.path.exists(input_video_path) else "VideoCaptureReceiver",
+                                            video_mware=video_mware, img_height=img_height, img_width=img_width)[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether working versions of ffmpeg or gstreamer is installed." +
                            "\nSupported file format: MPEG-4 (*.mp4).")
@@ -165,10 +176,9 @@ def video(input_video_path, display, gradcam, output_csv_file, screen_size,
             if img is None:
                 break
             else:  # Process frame
-                fer = None if (img is None) else cvision.recognize_facial_expression(img,
-                                                                                     device,
-                                                                                     face_detection,
-                                                                                     gradcam)
+                fer = None if (img is None) else cvision.recognize_facial_expression(img, device, face_detection, gradcam,
+                                                                                     facial_expressions_port=facial_expressions_port,
+                                                                                     facial_expressions_mware=facial_expressions_mware)
 
                 # Display blank screen if no face is detected, otherwise,
                 # display detected faces and perceived facial expression labels
@@ -226,6 +236,8 @@ def main():
                              "If none is selected, the default camera by the OS is used. "
                              "If webcam is a string, this equates to the port (topic) name. e.g., /icub/cam/left",
                         type=str_or_int, default="-1")
+    parser.add_argument("--img_width", help="Input image width", type=int, default=640)
+    parser.add_argument("--img_height", help="Input image height", type=int, default=480)
     parser.add_argument("--video_mware", type=str, choices=MiddlewareCommunicator.get_communicators(),
                         help="Middleware for listening to video stream")
     parser.add_argument("--facial_expressions_port", type=str, default="",
@@ -234,6 +246,9 @@ def main():
                         help="Middleware to publish facial expressions")
     parser.add_argument("-f", "--frames", help="define frames of videos and webcam captures.",
                         type=int, default=5)
+    parser.add_argument("--max_frames",
+                        help="define maximum frames captured by videos (original fps) and webcam (capture rate)",
+                        type=int, default=30)
     parser.add_argument("-b", "--branch", help="show individual branch's classification if set true, otherwise," +
                                                "show final ensemble's classification.",
                         action="store_true", default=False)
@@ -259,22 +274,22 @@ def main():
     if args.mode == "image":
         try:
             cvalidation.validate_image_video_mode_arguments(args)
-            image(args.input, args.display, args.gradcam, args.output,
-                  args.size, args.cuda, args.branch, args.face_detection)
+            image(input_image_path=args.input, output_csv_file=args.output,
+                  screen_size=args.size, device=args.cuda, **vars(args))
         except RuntimeError as e:
             print(e)
     elif args.mode == "video":
         try:
             cvalidation.validate_image_video_mode_arguments(args)
-            video(args.input, args.display, args.gradcam, args.output,
-                  args.size, args.cuda, args.frames, args.branch, args.no_plot, args.face_detection)
+            video(input_video_path=args.input, output_csv_file=args.output,
+                  screen_size=args.size, device=args.cuda, **vars(args))
         except RuntimeError as e:
             print(e)
     elif args.mode == "webcam":
         try:
             cvalidation.validate_webcam_mode_arguments(args)
-            webcam(args.webcam_id, args.display, args.gradcam, args.output,
-                   args.size, args.cuda, args.frames, args.branch, args.no_plot, args.face_detection)
+            webcam(camera_id=args.webcam_id, output_csv_file=args.output,
+                   screen_size=args.size, device=args.cuda, **vars(args))
         except RuntimeError as e:
             print(e)
 

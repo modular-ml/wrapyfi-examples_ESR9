@@ -196,6 +196,7 @@ class ESR(MiddlewareCommunicator, nn.Module):
 
         :param device: Device to load ESR-9: GPU or CPU.
         """
+        print("ESR 9 running on ", device)
         MiddlewareCommunicator.__init__(self)
         nn.Module.__init__(self)
 
