@@ -74,7 +74,7 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, img_width,
         # Loop to process each frame from a VideoCapture object.
         while cvvideo.is_video_capture_open()[0] and ((not display) or (display and fer_demo.is_running())):
             # Get a frame
-            img, _ = cvvideo.get_frame()
+            img, _ = cvvideo.get_frame(img_width=img_width, img_height=img_height)
 
             fer = None if (img is None) else cvision.recognize_facial_expression(img, device, face_detection, gradcam,
                                                                                  facial_expressions_port=facial_expressions_port,
@@ -170,7 +170,7 @@ def video(input_video_path, display, gradcam, output_csv_file, screen_size, img_
         # Loop to process each frame from a VideoCapture object.
         while cvvideo.is_video_capture_open()[0] and ((not display) or (display and fer_demo.is_running())):
             # Get a frame
-            img, timestamp = cvvideo.get_frame()
+            img, timestamp = cvvideo.get_frame(img_width=img_width, img_height=img_height)
 
             # Video has been processed
             if img is None:
