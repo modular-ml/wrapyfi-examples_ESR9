@@ -49,7 +49,7 @@ class CVVideo(MiddlewareCommunicator):
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "CVVideo", "/esr9/cam_ini", should_wait=True)
     def initialize_video_capture(self, source, video_device="VideoCapture", video_mware=DEFAULT_COMMUNICATOR,
-                                 img_width=CAP_PROP_FRAME_WIDTH, img_height=CAP_PROP_FRAME_HEIGHT):
+                                 img_width=CAP_PROP_FRAME_WIDTH, img_height=CAP_PROP_FRAME_HEIGHT, jpg=False):
 
         # If cap is not none, it re-initialize video capture with the new video file
         if not (self.cap is None):
@@ -58,7 +58,7 @@ class CVVideo(MiddlewareCommunicator):
 
         # Read the file
         try:
-            self.cap = globals()[video_device](str(source), headless=True, img_width=img_width, img_height=img_height,
+            self.cap = globals()[video_device](str(source), headless=True, img_width=img_width, img_height=img_height, jpg=jpg,
                                                mware=video_mware, multithreading=False, fps=self.max_fps)
             if img_width > 0 and img_height > 0:
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, img_width)
