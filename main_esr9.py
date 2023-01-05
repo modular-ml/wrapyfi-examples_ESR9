@@ -34,8 +34,8 @@ from model.utils import uimage
 from model.screen.fer_demo import FERDemo
 
 
-def webcam(camera_id, display, gradcam, output_csv_file, screen_size, img_width, img_height, device, frames, max_frames,
-           branch, no_plot, face_detection,
+def webcam(camera_id, display, gradcam, output_csv_file, screen_size, img_width, img_height, jpg,
+           device, frames, max_frames, branch, no_plot, face_detection,
            facial_expressions_port="/control_interface/facial_expressions",
            facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR, **kwargs):
     """
@@ -52,7 +52,7 @@ def webcam(camera_id, display, gradcam, output_csv_file, screen_size, img_width,
     if not cvvideo.initialize_video_capture(camera_id,
                                             video_device="VideoCapture" if isinstance(camera_id, int) or
                                                                            os.path.exists(camera_id) else "VideoCaptureReceiver",
-                                            video_mware=video_mware, img_height=img_height, img_width=img_width)[0]:
+                                            video_mware=video_mware, img_height=img_height, img_width=img_width, jpg=jpg)[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether a webcam is working or not." +
                            "In linux, you can use Cheese for testing.")
@@ -135,7 +135,7 @@ def image(input_image_path, display, gradcam, output_csv_file, screen_size, devi
         fer_demo.quit()
 
 
-def video(input_video_path, display, gradcam, output_csv_file, screen_size, img_width, img_height,
+def video(input_video_path, display, gradcam, output_csv_file, screen_size, img_width, img_height,jpg,
           device, frames, max_frames, branch, no_plot, face_detection,
           facial_expressions_port="/control_interface/facial_expressions",
           facial_expressions_mware=DEFAULT_COMMUNICATOR, video_mware=DEFAULT_COMMUNICATOR, **kwargs):
@@ -150,7 +150,7 @@ def video(input_video_path, display, gradcam, output_csv_file, screen_size, img_
 
     if not cvvideo.initialize_video_capture(input_video_path,
                                             video_device="VideoCapture" if os.path.exists(input_video_path) else "VideoCaptureReceiver",
-                                            video_mware=video_mware, img_height=img_height, img_width=img_width)[0]:
+                                            video_mware=video_mware, img_height=img_height, img_width=img_width, jpg=jpg)[0]:
         raise RuntimeError("Error on initializing video capture." +
                            "\nCheck whether working versions of ffmpeg or gstreamer is installed." +
                            "\nSupported file format: MPEG-4 (*.mp4).")
@@ -238,6 +238,9 @@ def main():
                         type=str_or_int, default="-1")
     parser.add_argument("--img_width", help="Input image width", type=int, default=640)
     parser.add_argument("--img_height", help="Input image height", type=int, default=480)
+    parser.add_argument('--jpg',
+                        dest='jpg', action="store_true", help='Receive JPG images when --webcam_id is a port topic and --video_mware is provided',
+                        default=False)
     parser.add_argument("--video_mware", type=str, choices=MiddlewareCommunicator.get_communicators(),
                         help="Middleware for listening to video stream")
     parser.add_argument("--facial_expressions_port", type=str, default="",
