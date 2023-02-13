@@ -20,6 +20,7 @@ __email__ = "siqueira.hc@outlook.com"
 __license__ = "MIT license"
 __version__ = "1.0"
 
+import time
 # Standard libraries
 from os import path
 
@@ -257,7 +258,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_1",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_1(self, x_shared_representations, device=None):
-        return self.convolutional_branches[1](x_shared_representations),
+        return {"tensor": self.convolutional_branches[1](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_2",
                                      should_wait=True)
@@ -267,7 +269,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_2",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_2(self, x_shared_representations, device=None):
-        return self.convolutional_branches[2](x_shared_representations),
+        return {"tensor": self.convolutional_branches[2](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_3",
                                      should_wait=True)
@@ -277,7 +280,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_3",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_3(self, x_shared_representations, device=None):
-        return self.convolutional_branches[3](x_shared_representations),
+        return {"tensor": self.convolutional_branches[3](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_4",
                                      should_wait=True)
@@ -287,7 +291,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_4",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_4(self, x_shared_representations, device=None):
-        return self.convolutional_branches[4](x_shared_representations),
+        return {"tensor": self.convolutional_branches[4](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_5",
                                      should_wait=True)
@@ -297,7 +302,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_5",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_5(self, x_shared_representations, device=None):
-        return self.convolutional_branches[5](x_shared_representations),
+        return {"tensor": self.convolutional_branches[5](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_6",
                                      should_wait=True)
@@ -307,7 +313,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_6",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_6(self, x_shared_representations, device=None):
-        return self.convolutional_branches[6](x_shared_representations),
+        return {"tensor": self.convolutional_branches[6](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_7",
                                      should_wait=True)
@@ -317,7 +324,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_7",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_7(self, x_shared_representations, device=None):
-        return self.convolutional_branches[7](x_shared_representations),
+        return {"tensor": self.convolutional_branches[7](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_8",
                                      should_wait=True)
@@ -327,7 +335,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_8",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_8(self, x_shared_representations, device=None):
-        return self.convolutional_branches[8](x_shared_representations),
+        return {"tensor": self.convolutional_branches[8](x_shared_representations),
+                "timestamp": time.time()},
 
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/created_branch_9",
                                      should_wait=True)
@@ -337,7 +346,8 @@ class ESR(MiddlewareCommunicator, nn.Module):
     @MiddlewareCommunicator.register("NativeObject", DEFAULT_COMMUNICATOR, "ESR", "/esr9/forward_branch_9",
                                      should_wait=True, listener_kwargs=dict(load_torch_device='$device'))
     def forward_branch_9(self, x_shared_representations, device=None):
-        return self.convolutional_branches[9](x_shared_representations),
+        return {"tensor": self.convolutional_branches[9](x_shared_representations),
+                "timestamp": time.time()},
 
     def forward(self, x):
         """
@@ -356,8 +366,10 @@ class ESR(MiddlewareCommunicator, nn.Module):
 
         # Add to the lists of predictions outputs from each convolutional branch in the ensemble
         for branch_idx in range(1, len(self)+1):
-            (output_emotion, output_affect), = getattr(self, f"forward_branch_{branch_idx}")\
+            fwd_pass, = getattr(self, f"forward_branch_{branch_idx}")\
                 (x_shared_representations, device=self.device)  # branch(x_shared_representations)
+            (output_emotion, output_affect) = fwd_pass["tensor"]
+            delay = time.time() - fwd_pass["timestamp"]
             emotions.append(output_emotion)
             affect_values.append(output_affect)
 
